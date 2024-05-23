@@ -8,19 +8,54 @@ public class CircleObject : MonoBehaviour
     public bool isUsed;           //사용 완료 체크
     Rigidbody2D rigidbody2D;      //2D 강체 선언
 
+    public void OnTriggerStay2D(Collider2D collision)       //Trigger에 있을때
+    {
+        if(collision.tag == "EndLine")                     //충돌중인 물체의 Tag가 EndLine일 경우
+        { 
+            EndTime += Time.deltaTime;                     //프레임 시간만큼 누적 시켜서 초를 카운트 한다
+
+            if(EndTime > 1)                                            //1초 이상일 경우
+            {
+                spriteRenderer.color = new Color(0.9f, 0.2f, 0.2f);    //빨간색 처리
+
+            } 
+            if(EndTime > 3)                                            //3초 이상일 경우
+            {
+                //Debug.Log("게임 종료");                               //우선 게임 종료 처리
+                gameManager.EndGame();
+            }
+        }
+    }
+
+    public void OnTriggerExit2D(Collider2D collision)              //Trigger에서 나올때
+    {
+        if(collision.tag == "EndLine")                            //충돌중인 물체의 Tag가 EndLine일 경우
+        {
+            EndTime = 0.0f;
+            spriteRenderer.color = Color.white;                   //기본 색상으로 변경
+        }
+    }
+
     public int index;             //과일 번호 설정
+
+    public float EndTime = 0.0f;              //종료 선 시간 체크 변수(float)
+    public SpriteRenderer spriteRenderer;     //종료 시 스프라이트 색을 변환 시키기 위해서 접근 선언
+
+    public GameManager gameManager;           //게임 매니저 참조용
 
     private void Awake()
     {
         isUsed = false;                              //시작할 때 사용이 안되었다고 입력
         rigidbody2D = GetComponent<Rigidbody2D>();   //오브젝트의 강체에 접근
         rigidbody2D.simulated = false;               //물리 행동이 처음에는 동작하기 않게 설정
+
+        spriteRenderer = GetComponent<SpriteRenderer>();   //오브젝트에 붙어있는 컴포넌트에 접근
     }
 
     // Start is called before the first frame update
     void Start()
     {
-       
+        gameManager = GameObject.FindWithTag("GameManager").GetComponent<GameManager>();
     }
 
     // Update is called once per frame
@@ -60,11 +95,7 @@ public class CircleObject : MonoBehaviour
         isUsed = true;                 //사용 완료되었다 (true)
         rigidbody2D.simulated = true;  //물리 시뮬레이션 사용함 (true)
 
-        GameObject temp = GameObject.FindWithTag("GameManager");    //Secne에서 GameManager Tag 가지고 있는 오브젝트를 가져온다.
-        if(temp != null)                                            //해당 오브젝트가 있을 경우
-        {
-            temp.gameObject.GetComponent<GameManager>().GenObject();  //GameManager의 GenObject 함수를 호출
-        }
+        gameManager.GenObject();
     }
 
     public void Used()
@@ -87,13 +118,10 @@ public class CircleObject : MonoBehaviour
                 if(gameObject.GetInstanceID() > collision.gameObject.GetInstanceID())   //2개 합쳐서 1개를 만들기 위해서 ID검사 후 큰것만
                 {
                     //GameManager에서 합친 오브젝트를 생성 
-                    GameObject tempGameManager = GameObject.FindWithTag("GameManager");
-                    if (tempGameManager != null)
-                    {
-                        tempGameManager.gameObject.GetComponent<GameManager>().MergeObject(index, gameObject.transform.position);
-                    }
-                    Destroy(temp.gameObject);     //충돌한 물체 제거
-                    Destroy(gameObject);          //자신도 제거
+                    gameManager.MergeObject(index, gameObject.transform.position);
+
+                    Destroy(temp.gameObject);                                   //충돌한 물체 제거
+                    Destroy(gameObject);                                        //자신도 제거 
                 }
             }
         }

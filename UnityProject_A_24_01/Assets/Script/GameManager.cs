@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +10,11 @@ public class GameManager : MonoBehaviour
     public float timeCheck;
     public bool isGen;
 
+    public int Point;
+    public int BestScore;
+    public static event Action<int> OnPointChanged;
+    public static event Action<int> OnBestScoreChanged;
+
     public void GenObject()       //생성 관련 변수값 변경 시켜주는 함수
     {
         isGen = false;            //생성 완료 되었으니 bool을 false로 변경
@@ -19,6 +25,8 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         GenObject();
+        OnPointChanged?.Invoke(Point);
+        OnBestScoreChanged?.Invoke(BestScore);
     }
 
     // Update is called once per frame
@@ -29,7 +37,7 @@ public class GameManager : MonoBehaviour
             timeCheck -= Time.deltaTime;                          //매 프레임 돌아가면서 시간을 감소 시킨다.
             if(timeCheck <= 0.0f)                                 //0초 이하가 되었을 경우
             {
-                int RandNumber = Random.Range(0, 3);                       //0 ~ 2 의 랜덤 넘버 생성
+                int RandNumber = UnityEngine.Random.Range(0, 3);                       //0 ~ 2 의 랜덤 넘버 생성
                 GameObject Temp = Instantiate(CircleObject[RandNumber]);   //프리팹 생성 후 Temp 오브젝트에 넣는다.
                 Temp.transform.position = genTransform.position;  //고정 위치에 생성시킨다.
                 isGen = true;
@@ -42,5 +50,20 @@ public class GameManager : MonoBehaviour
         GameObject Temp = Instantiate(CircleObject[index]);
         Temp.transform.position = position;
         Temp.GetComponent<CircleObject>().Used();
+
+        Point += (int)Mathf.Pow(index, 2) * 10;
+        OnPointChanged?.Invoke(Point);
+    }
+    public void EndGame()   
+    {
+        int BestScore = PlayerPrefs.GetInt("BestScore");
+
+        if(Point > BestScore)
+        {
+            PlayerPrefs.SetInt("BestScore", BestScore);
+            OnBestScoreChanged?.Invoke(BestScore);
+        }
+
+        //종료 시 해야 할일 나중에 추가
     }
 }
